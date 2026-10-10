@@ -1,6 +1,6 @@
 ---
 name: prompt-master
-version: 1.8.0
+version: 1.9.0-fork
 description: Generates optimized prompts for AI tools. Activates only when the user explicitly asks to write, fix, improve, or adapt a prompt for a specific AI tool (LLM, Cursor, Midjourney, image AI, video AI, coding agents, etc.). Does not activate for general conversation, coding tasks, document writing, or other non-prompt-engineering work.
 ---
 
@@ -19,14 +19,15 @@ Build prompts one at a time, ready to paste.
 
 - Do not output a prompt without first confirming the target tool — ask if ambiguous
 - Prefer simpler techniques (role assignment, few-shot examples, grounding anchors, and explicit verification criteria) over complex meta-reasoning frameworks in single-prompt contexts. The following techniques carry higher fabrication risk when used in a single prompt and should only be applied when the user explicitly requests them and the target tool supports them:
-  - **Mixture of Experts** -- simulated multi-persona routing in a single forward pass
+  - **Simulated expert panel** (often mislabeled "Mixture of Experts"; MoE is a model architecture, not a prompting technique) -- simulated multi-persona routing in a single forward pass
   - **Tree of Thought** -- simulated branching without real parallel execution
   - **Graph of Thought** -- requires an external graph engine not present in most tools
   - **Universal Self-Consistency** -- requires independent sampling passes
-  - **Prompt chaining as a layered technique** -- compounds fabrication risk across longer chains
+  - **Layered prompt chaining inside a single prompt** -- compounds fabrication risk across longer chains. This does NOT forbid splitting work into separate sequential prompts that the user runs and reviews one at a time; that is recommended where noted below.
 - Never request hidden chain-of-thought, private reasoning, or a verbatim reasoning trace from any model. Ask for conclusions, assumptions, evidence, concise rationale, and verification results instead.
 - Do not ask more than 3 clarifying questions before producing a prompt
-- Do not pad output with explanations the user did not request
+- Do not pad output with explanations the user did not request (the Assumptions line and the Agentic Output Warning are required exceptions, not padding)
+- Do not state model IDs, versions, or parameter defaults from memory. Take them from [references/models.md](references/models.md) and apply its freshness rule; otherwise name the model family only and mark the detail as unverified.
 
 ---
 
@@ -35,7 +36,8 @@ Build prompts one at a time, ready to paste.
 Output format:
 1. A single copyable prompt block ready to paste into the target tool
 2. 🎯 Target: [tool name],💡 [One sentence — what was optimized and why]
-3. If the prompt needs setup steps before pasting, add a short plain-English instruction note below. 1-2 lines max. ONLY when genuinely needed.
+3. ⚠️ Assumptions: [every value you inferred that the user did not state: success criteria, lengths, roles, specs, versions]. One line, comma-separated. Omit the line only when nothing was inferred.
+4. If the prompt needs setup steps before pasting, add a short plain-English instruction note below. 1-2 lines max. Only when needed.
 
 For copywriting and content prompts include fillable placeholders where relevant ONLY: [TONE], [AUDIENCE], [BRAND VOICE], [PRODUCT NAME].
 
@@ -76,9 +78,9 @@ Model names, defaults, controls, and availability change quickly. When the user 
 
 ---
 
-**Claude (claude.ai, Claude API, Claude 5 / current Claude models)**
+**Claude (claude.ai, Claude API, Claude Code — current Claude models)**
 
-Do not assume one universal Claude default. When unsure, start with **Claude Opus 5** (`claude-opus-5`) for complex agentic coding and enterprise work. Use **Claude Fable 5** (`claude-fable-5`) for the highest-capability long-running agents, **Claude Sonnet 5** (`claude-sonnet-5`) for speed plus frontier intelligence, and **Claude Haiku 4.5** for fast, economical workloads. Ask which model only when the distinction changes the prompt.
+Do not assume one universal Claude default. Tier names and exact model IDs live in [references/models.md](references/models.md); apply its freshness rule before quoting any ID. Guidance below is written per tier (highest-capability / flagship / balanced / fast) so it survives renames. Ask which model only when the distinction changes the prompt.
 
 *Durable across current Claude models:*
 - Be clear and direct. State the desired output, constraints, and scope explicitly; explain why when the reason affects judgment.
@@ -86,53 +88,53 @@ Do not assume one universal Claude default. When unsure, start with **Claude Opu
 - For long context, put source documents before the query and wrap documents plus metadata in descriptive XML tags.
 - Prefer positive instructions that describe the desired result over long lists of prohibitions.
 - Do not request hidden reasoning or reproduce thinking. Ask for a concise rationale, evidence, and verification results.
-- Current Claude 5 models use adaptive thinking and an effort control. Do not hardcode manual thinking budgets; recommend an effort level only when the user controls API or harness settings.
+- Current Claude models use adaptive thinking and an effort control. Do not hardcode manual thinking budgets; recommend an effort level only when the user controls API or harness settings.
 - Use Template M for complex or agentic tasks.
 
-*Fable 5:*
-- Fable 5 is optimized for the hardest long-horizon autonomous work. Give it a complete outcome-focused specification, explicit action boundaries, and infrastructure suitable for long asynchronous runs.
+*Highest-capability long-horizon tier (see models.md for current name):*
+- This tier is optimized for the hardest long-horizon autonomous work. Give it a complete outcome-focused specification, explicit action boundaries, and infrastructure suitable for long asynchronous runs.
 - Ground every long-run progress claim in actual tool results. Delegate independent workstreams to subagents when useful and establish interval-based verification for long builds; cap concurrency or spend when cost matters.
 
-*Opus 5:*
-- Opus 5 is the recommended starting point for complex agentic coding and enterprise work. Keep scope tight: "Deliver what was asked. Do not add features, refactors, or abstractions beyond the task."
-- Opus 5 already self-verifies strongly. Avoid redundant "double-check everything" instructions and verifier subagents for routine work; delegate only genuinely independent, sizeable tracks.
+*Flagship tier (see models.md):*
+- This tier is the usual starting point for complex agentic coding and enterprise work. Keep scope tight: "Deliver what was asked. Do not add features, refactors, or abstractions beyond the task."
+- It already self-verifies strongly. Avoid redundant "double-check everything" instructions and verifier subagents for routine work; delegate only genuinely independent, sizeable tracks.
 
-*Sonnet 5:*
-- Sonnet 5 follows instructions literally, especially at lower effort. State when a rule applies to every item or section.
+*Balanced tier (see models.md):*
+- This tier follows instructions literally, especially at lower effort. State when a rule applies to every item or section.
 - Raise effort for difficult multi-step work rather than compensating with elaborate reasoning prompts. Use explicit style and design direction instead of non-default sampling parameters.
 
-*Claude 4.8 and earlier selectable models:*
+*Earlier selectable Claude 4.x models:*
 - Existing explicit, front-loaded prompts remain compatible. If the model is 4.7 or later, use adaptive thinking and effort rather than `budget_tokens`.
 
 ---
 
-**ChatGPT / GPT-5.6 / OpenAI GPT models**
-- Current GPT-5.6 family: **Sol** (`gpt-5.6-sol`, also the `gpt-5.6` alias) for flagship capability, **Terra** (`gpt-5.6-terra`) for balanced everyday work, and **Luna** (`gpt-5.6-luna`) for fast, repeatable, high-volume work. In standard ChatGPT, availability depends on the user's plan; do not promise a specific picker option.
+**ChatGPT / OpenAI GPT models**
+- Current family names, tiers, and API IDs: see [references/models.md](references/models.md) and apply its freshness rule. In standard ChatGPT, availability depends on the user's plan; do not promise a specific picker option.
 - Start lean. For complex work use four compact sections: Goal, Context, Constraints, and Done. State each instruction once.
-- GPT-5.6 infers intent well; specify domain context, hard constraints, approval boundaries, success criteria, and which ambiguity should trigger a question, but do not prescribe every reasoning step.
+- Current GPT models infer intent well; specify domain context, hard constraints, approval boundaries, success criteria, and which ambiguity should trigger a question, but do not prescribe every reasoning step.
 - Define autonomy clearly: safe in-scope local inspection, edits, and validation may proceed; external writes, destructive actions, purchases, and material scope expansion require confirmation.
 - Use the lowest reasoning effort that meets the quality bar.
 - For the API, recommend higher effort, `reasoning.mode: "pro"`, or Responses multi-agent beta only when measured quality justifies the added latency and cost. Pro mode is not a separate API model slug.
-- For ChatGPT and Codex surfaces, recommend available product controls such as Sol Pro, Max, or Ultra only for suitably difficult work. Do not translate those UI controls into API parameters.
+- For ChatGPT and Codex surfaces, recommend higher product-level reasoning controls (names in models.md) only for suitably difficult work. Do not translate those UI controls into API parameters.
 - State tool-use expectations and required evidence explicitly. Use programmatic or multi-agent tool orchestration only for bounded work that divides cleanly.
 - Never request hidden reasoning. Ask for conclusions, assumptions, evidence, and checks.
 - Control visible length with the output contract (and `text.verbosity` in the API), not by asking for less thinking.
 
 ---
 
-**o3 / o4-mini / OpenAI reasoning models**
+**OpenAI o-series reasoning models (o3, o4-mini, and successors)**
 - SHORT clean instructions ONLY — these models reason across thousands of internal tokens
-- NEVER add CoT, "think step by step", or reasoning scaffolding — it actively degrades output
+- Do not add CoT, "think step by step", or reasoning scaffolding — the model reasons internally and OpenAI advises against it; it can degrade output
 - Prefer zero-shot first — add few-shot only if strictly needed and tightly aligned
 - State what you want and what done looks like. Nothing more.
-- Keep system prompts under 200 words — longer prompts hurt performance on reasoning models
+- Keep system prompts as short as the task allows. No fixed word limit is documented; cut anything that does not change the output
 
 ---
 
-**Grok / Grok 4.6 / xAI**
-- Use `grok-4.6` for current general chat, coding, agentic, and knowledge-work prompts. It supports text and image input, configurable reasoning, function calling, web search, X search, and code execution.
-- Keep the task outcome-focused: Goal, Context/Input, Constraints, Tools/Permissions, and Done. Grok 4.6 is OpenAI-API compatible, but the prompt must still name the tools and evidence the task requires.
-- Choose reasoning effort intentionally: `low` for scoped or latency-sensitive work, `medium` for balanced work, `high` (the API default) for difficult tasks, and `xhigh` only when deeper exploration is worth the cost. Grok 4.6 reasoning cannot be disabled. Do not ask for chain-of-thought.
+**Grok / xAI**
+- Use the current Grok model (ID in [references/models.md](references/models.md)) for general chat, coding, agentic, and knowledge-work prompts. It supports text and image input, configurable reasoning, function calling, web search, X search, and code execution.
+- Keep the task outcome-focused: Goal, Context/Input, Constraints, Tools/Permissions, and Done. The xAI API is OpenAI-API compatible, but the prompt must still name the tools and evidence the task requires.
+- Choose reasoning effort intentionally: `low` for scoped or latency-sensitive work, `medium` for balanced work, `high` for difficult tasks, and the highest level only when deeper exploration is worth the cost. Check models.md / xAI docs for the current default and whether reasoning can be disabled. Do not ask for chain-of-thought.
 - For current facts, explicitly require Web Search or X Search and citations. Grok's base model does not have realtime knowledge without search tools enabled.
 - For long, tool-heavy agent loops, define stop conditions, approval boundaries, retry limits, and context-compaction checkpoints. Keep stable instructions at the front to preserve prompt-cache reuse.
 - For API setup notes, recommend `prompt_cache_key` on the Responses API or `x-grok-conv-id` on Chat Completions for reliable cache routing; do not place secret values in the prompt.
@@ -140,7 +142,7 @@ Do not assume one universal Claude default. When unsure, start with **Claude Opu
 
 ---
 
-**Gemini 2.x / Gemini 3 Pro**
+**Gemini (current family — versions in references/models.md)**
 - Strong at long-context and multimodal — leverage its large context window for document-heavy prompts
 - Prone to hallucinated citations — always add "Cite only sources you are certain of. If uncertain, say [uncertain]."
 - Can drift from strict output formats — use explicit format locks with a labelled example
@@ -164,11 +166,11 @@ Do not assume one universal Claude default. When unsure, start with **Claude Opu
 ---
 
 **Ollama (local model deployment)**
-- ALWAYS ask which model is running before writing — Llama3, Mistral, Qwen2.5, CodeLlama all behave differently
+- ALWAYS ask which model is running before writing — Llama, Mistral, Qwen, Gemma and code-specialized models all behave differently
 - System prompt is the most impactful lever — include it in the output so user can set it in their Modelfile
 - Shorter simpler prompts outperform complex ones — local models lose coherence with deep nesting
 - Temperature 0.1 for coding/deterministic tasks, 0.7-0.8 for creative tasks
-- For coding: CodeLlama or Qwen2.5-Coder, not general Llama
+- For coding: a current code-specialized model (e.g., Qwen2.5-Coder or newer), not a general chat model. CodeLlama is legacy
 
 ---
 
@@ -206,7 +208,7 @@ Do not assume one universal Claude default. When unsure, start with **Claude Opu
 - Do not assume the Claude Code model. Apply the matching current Claude route above; when model-specific behavior matters, ask which model is selected.
 - Front-load intent, relevant paths, constraints, acceptance criteria, and verification commands. Explicitly request tool use when inspection is required.
 - Current Fable/Opus models can over-scope and delegate readily. Add "Only make changes directly requested" and reserve subagents for independent, sizeable investigation or implementation tracks.
-- Do not force a separate verifier on Opus 5 for routine work; request concrete tests and tool-backed evidence instead. For long Fable 5 runs, require progress claims to cite actual tool results.
+- Do not force a separate verifier on the flagship tier for routine work; request concrete tests and tool-backed evidence instead. For long runs on the highest-capability tier, require progress claims to cite actual tool results.
 - Always scope to specific files and directories — never give a global instruction without a path anchor
 - Human review triggers required: "Stop and ask before deleting any file, adding any dependency, or affecting the database schema"
 - For complex tasks, use Template M. It handles scope, criteria, action boundaries, and progress evidence in one structured block.
@@ -214,15 +216,15 @@ Do not assume one universal Claude default. When unsure, start with **Claude Opu
 ---
 
 **Codex CLI / ChatGPT Work / Codex IDE**
-- Use the GPT-5.6 route above. Sol is the capability-first default, Terra is the everyday workhorse, and Luna is best for clear, repeatable tasks.
+- Use the OpenAI GPT route above; pick the tier from models.md (capability-first for hard work, balanced for everyday work, fast tier for clear repeatable tasks).
 - Structure implementation prompts as Goal, Context, Scope, Constraints, Approval Boundaries, and Done. Include concrete verification commands when known.
-- Start with default reasoning. Raise it for work that needs deeper planning or checking; use Max for the hardest single-agent tasks and Ultra only when the task splits into meaningful independent tracks.
+- Start with default reasoning. Raise it for work that needs deeper planning or checking; use the highest single-agent setting only for the hardest tasks, and multi-agent settings only when the task splits into meaningful independent tracks.
 - Keep one primary agent responsible for synthesis. Name each subagent's bounded deliverable and cap concurrency rather than requesting an open-ended swarm.
 - Ask for a concise rationale, evidence, changed-file summary, and verification results—not hidden reasoning.
 
 ---
 
-**Antigravity (Google's agent-first IDE, powered by Gemini 3 Pro)**
+**Antigravity (Google's agent-first IDE, Gemini-powered)**
 - Task-based prompting — describe outcomes, not steps
 - Prompt for an Artifact (task list, implementation plan) before execution so you can review it first
 - Browser automation is built-in — include verification steps: "After building, verify UI at 375px and 1440px using the browser agent"
@@ -297,12 +299,15 @@ Do not assume one universal Claude default. When unsure, start with **Claude Opu
 
 ---
 
-**Image AI — Generation** (Midjourney, DALL-E 3, Stable Diffusion, SeeDream)
+**Image AI — Generation** (Midjourney, DALL-E 3 / GPT image models, Stable Diffusion family, Flux, SeeDream)
 First detect: generation from scratch or editing an existing image?
 
-- **Midjourney**: Comma-separated descriptors, not prose. Subject first, then style, mood, lighting, composition. Parameters at end: `--ar 16:9 --v 6 --style raw`. Negative prompts via `--no [unwanted elements]`
-- **DALL-E 3**: Prose description works. Add "do not include text in the image unless specified." Describe foreground, midground, background separately for complex compositions.
-- **Stable Diffusion**: `(word:weight)` syntax. CFG 7-12. Negative prompt is MANDATORY. Steps 20-30 for drafts, 40-50 for finals.
+- **Midjourney**: Comma-separated descriptors, not prose. Subject first, then style, mood, lighting, composition. Parameters at end: `--ar 16:9 --style raw` plus the current `--v` value from references/models.md. Negative prompts ONLY via `--no [unwanted elements]` — Midjourney has no `negative:` field
+- **DALL-E 3 / GPT image models**: Prose description works. Add "do not include text in the image unless specified." Describe foreground, midground, background separately for complex compositions.
+- **Stable Diffusion 1.5 / SDXL**: `(word:weight)` syntax. CFG ~7-12 (SD 1.5) or ~5-9 (SDXL). Negative prompt strongly recommended. Steps 20-30 for drafts, 40-50 for finals.
+- **SD 3.x**: natural-language prose; weight syntax has little effect. CFG ~4-5. Negative prompt optional.
+- **Flux**: natural-language prose; weight syntax largely ignored. Uses distilled guidance (~3-4), and default pipelines do not apply negative prompts — omit them unless the user's workflow explicitly supports one.
+- Ask which checkpoint/model family is in use when the user says only "Stable Diffusion".
 - **SeeDream**: Strong at artistic and stylized generation. Specify art style explicitly (anime, cinematic, painterly) before scene content. Mood and atmosphere descriptors work well. Negative prompt recommended.
 
 ---
@@ -341,7 +346,7 @@ Read references/templates.md Template K for the full ComfyUI template.
 
 **Video AI** (Sora, Runway, Kling, LTX Video, Dream Machine)
 - Sora: describe as if directing a film shot. Camera movement is critical — static vs dolly vs crane changes output dramatically.
-- Runway Gen-3: responds to cinematic language — reference film styles for consistent aesthetic.
+- Runway (Gen-3 and later): responds to cinematic language — reference film styles for consistent aesthetic.
 - Kling: strong at realistic human motion — describe body movement explicitly, specify camera angle and shot type.
 - LTX Video: fast generation, prompt-sensitive — keep descriptions concise and visual. Specify resolution and motion intensity explicitly.
 - Dream Machine (Luma): cinematic quality — reference lighting setups, lens types, and color grading styles.
@@ -395,11 +400,11 @@ Then build using the closest matching category.
 
 ### Diagnostic Checklist
 
-Scan every user-provided prompt or rough idea for these failure patterns. Fix silently — flag only if the fix changes the user's intent.
+Scan every user-provided prompt or rough idea for these failure patterns. Apply fixes without commentary, but list every value you inferred (criteria, lengths, roles, specs, versions) in the ⚠️ Assumptions line so the user can correct it. Flag explicitly if a fix changes the user's intent.
 
 **Task failures**
 - Vague task verb → replace with a precise operation
-- Two tasks in one prompt → split, deliver as Prompt 1 and Prompt 2
+- Two tasks in one prompt → split, deliver as Prompt 1 and Prompt 2 (user-run sequential prompts, not layered chaining)
 - No success criteria → derive a binary pass/fail from the stated goal
 - Emotional description ("it's broken") → extract the specific technical fault
 - Scope is "the whole thing" → decompose into sequential prompts
@@ -465,6 +470,8 @@ When the user's request references prior work, decisions, or session history —
 
 ### Agentic Output Warning
 
+This notice is a declared exception to the no-padding rule.
+
 For prompts targeting agentic tools (Claude Code, Devin, Cursor, Windsurf, Cline, Bolt, SWE-agent, Manus, or anything that executes commands or edits files — mandatory for Templates G, H, M and any prompt referencing filesystem, terminal, dependency, or database operations), append this notice:
 
 "This prompt is for an agentic tool with real system access. Review the scope locks, forbidden actions, and stop conditions before pasting. Confirm file paths, directories, and permissions match the actual project."
@@ -477,20 +484,23 @@ For prompts targeting agentic tools (Claude Code, Devin, Cursor, Windsurf, Cline
 
 1. Is the target tool correctly identified and the prompt formatted for its specific syntax?
 2. Are the most critical constraints in the first 30% of the generated prompt?
-3. Does every instruction use the strongest signal word? MUST over should. NEVER over avoid.
+3. Are instructions clear, specific, and phrased positively where possible? Reserve emphatic wording (MUST/NEVER, all caps) for genuine safety or irreversibility constraints — current models over-apply emphatic rules, and for Claude this contradicts the provider's guidance.
 4. Has every fabricated technique been removed?
 5. Has the token efficiency audit passed — every sentence load-bearing, no vague adjectives, format explicit, scope bounded?
 6. Would this prompt produce the right output on the first attempt?
+7. Is every inferred value listed in the ⚠️ Assumptions line?
+8. Does every model ID, version, or parameter default come from references/models.md within its freshness window — or is it marked unverified?
 
 **Success criteria**
-The user pastes the prompt into their target tool. It works on the first try. Zero re-prompts needed. That is the only metric.
+The user pastes the prompt into their target tool. It works on the first try. Zero re-prompts needed. That is the target metric; [evals/cases.json](evals/cases.json) holds regression cases for checking the skill's own output against it.
 
 ---
 
 ## Reference Files
-Read only when the task requires it. Do not load both at once.
+Read only when the task requires it. Load one at a time; models.md is small and may be read alongside another.
 
 | File | Read When |
 |------|-----------|
 | [references/templates.md](references/templates.md) | You need the full template structure for any tool category |
 | [references/patterns.md](references/patterns.md) | User pastes a bad prompt to fix, or you need the complete 37-pattern reference |
+| [references/models.md](references/models.md) | Before writing any model ID, version, or parameter default into a prompt or note |

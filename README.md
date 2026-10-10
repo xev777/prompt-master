@@ -2,7 +2,9 @@
 
 <br/>
 
-A Claude skill that writes the accurate prompts for any AI tool. Zero tokens or credits wasted. Full context and memory retention. No re-prompting your way to an answer you should have gotten on attempt one.
+> **Fork of [nidhinjs/prompt-master](https://github.com/nidhinjs/prompt-master)** (v1.9.0-fork). Changes: model IDs moved to a dated registry with a freshness rule, emphatic-wording rule fixed, visible Assumptions line, corrected image-model syntax (Midjourney `--no`, SD 1.5/SDXL vs SD3/Flux), and a regression eval suite. See Version History.
+
+A Claude skill that writes accurate prompts for any AI tool, aiming to cut wasted tokens and re-prompts. Carries forward decisions from the current conversation (it has no memory across sessions). No re-prompting your way to an answer you should have gotten on attempt one.
 
 **Works with:** Claude, ChatGPT, Codex, Grok, Gemini, o1/o3, MiniMax, Cursor, Claude Code, GitHub Copilot, Windsurf, Bolt, v0, Lovable, Devin, Perplexity, Midjourney, DALL-E, Stable Diffusion, ComfyUI, Sora, Runway, ElevenLabs, Zapier, Make, and any AI tool you throw at it.
 
@@ -20,7 +22,7 @@ A Claude skill that writes the accurate prompts for any AI tool. Zero tokens or 
 
 ```bash
 mkdir -p ~/.claude/skills
-git clone https://github.com/nidhinjs/prompt-master.git ~/.claude/skills/prompt-master
+git clone https://github.com/xev777/prompt-master.git ~/.claude/skills/prompt-master
 ```
 
 ## 🔥 The Problem This Solves
@@ -103,11 +105,12 @@ Write me a midjourney prompt for a realistic samurai standing in the rain at nig
 lone samurai standing in heavy rain at night, traditional armor, 
 neon reflections on wet cobblestone street, cinematic lighting, 
 dramatic shadows, fog, ultra detailed, photorealistic, 
-shallow depth of field --ar 16:9 --v 6 --style raw
+shallow depth of field --ar 16:9 --v 7 --style raw
 
-negative: blurry, low quality, watermark, cartoon, anime, extra limbs
+--no blurry, low quality, watermark, cartoon, anime, extra limbs
 ```
-**🎯 Target:** Midjourney · **⚡ Framework:** Visual Descriptor · **💰 Tokens:** Light (~60) · **💡 Strategy:** Comma-separated descriptors over prose, lighting and mood anchored early, aspect ratio and version locked, negative prompt prevents style drift.
+**🎯 Target:** Midjourney · **💡** Comma-separated descriptors over prose, lighting and mood anchored early, aspect ratio and version locked, `--no` exclusions prevent style drift.
+**⚠️ Assumptions:** 16:9 aspect ratio, photorealistic style, `--v 7` (verify current version).
 
 ---
 ## Full Example #2: Generating Prompts for Coding
@@ -188,7 +191,7 @@ Done When:
 - Hover states work on all interactive elements
 - Opens in browser with zero console errors
 ```
-**🎯 Target:** Claude Code · **💰 Tokens:** Medium (~380) · **💡 Strategy:** Every vague Notion aesthetic cue translated into exact hex values and pixel specs — Claude Code cannot guess wrong. Animations defined with exact timing, method, and trigger so there is no interpretation needed.
+**🎯 Target:** Claude Code · **💡** Every vague Notion aesthetic cue translated into exact hex values and pixel specs — Claude Code cannot guess wrong. Animations defined with exact timing, method, and trigger so there is no interpretation needed.
 
 ---
 
@@ -205,7 +208,7 @@ Prompt Master includes specific profiles for 20+ tools. For anything not on the 
 | **ChatGPT / GPT-5.6** | Reasoning and agentic LLM | Sol/Terra/Luna routing, lean contracts, autonomy and effort control |
 | **Codex** | Coding agent | File scope, approval boundaries, verification, bounded subagents |
 | **Grok 4.6** | Reasoning and agentic LLM | Search grounding, reasoning effort, tools, caching, and stop conditions |
-| **Gemini 2.x** | Reasoning LLM | Grounding anchors, citation rules, format locks |
+| **Gemini** | Reasoning LLM | Grounding anchors, citation rules, format locks |
 | **o3 / o4-mini** | Thinking LLM | Short clean instructions only — never adds CoT (they think internally) |
 | **Ollama** | Local LLM | Asks which model is loaded, includes system prompt for Modelfile |
 | **Qwen 2.5 / Qwen3** | Open-weight LLM | Chat template format, thinking vs non-thinking mode detection |
@@ -328,7 +331,7 @@ Prompt Master only uses techniques with reliable, bounded effects. Methods known
 | 16 | **No role assignment** | (blank) | "You are a senior backend engineer specializing in Node.js and PostgreSQL" |
 | 17 | **Vague aesthetic adjectives** | "make it look professional" | "Monochrome palette, 16px base font, 24px line height, no decorative elements" |
 | 18 | **No negative prompts (image AI)** | "a portrait of a woman" | Add: "no watermark, no blur, no extra fingers, no distortion, no text" |
-| 19 | **Prose prompt for Midjourney** | Full descriptive sentence | "subject, style, mood, lighting, --ar 16:9 --v 6" |
+| 19 | **Prose prompt for Midjourney** | Full descriptive sentence | "subject, style, mood, lighting, --ar 16:9 --v [current]" |
 
 </details>
 
@@ -380,7 +383,7 @@ Prompt Master only uses techniques with reliable, bounded effects. Methods known
 
 ## 🧠 Memory Block System
 
-When your conversation has history, Prompt Master pulls out prior decisions and prepends a Memory Block so the AI never contradicts earlier work:
+When the current conversation has history, Prompt Master pulls out prior decisions and prepends a Memory Block so the target AI does not contradict earlier work. This is not persistent memory: in a new session, re-provide the decisions.
 
 ```
 ## Memory (Carry Forward from Previous Context)
@@ -397,6 +400,7 @@ This is the single biggest fix for long sessions. Most wasted re-prompts come fr
 
 ## ℹ️ Version History
 
+- **1.9.0-fork** — Fork maintenance release. Moved all model IDs/versions to `references/models.md` with a 60-day freshness rule (upstream IDs marked UNVERIFIED). Replaced "MUST over should / NEVER over avoid" with positive, specific wording (emphasis reserved for safety). Added a visible ⚠️ Assumptions line instead of silent fixes. Fixed image syntax: Midjourney `--no` only, `--v` from registry, SD 1.5/SDXL vs SD3/Flux guidance and negative-prompt handling. Renamed "Mixture of Experts" to simulated expert panel, clarified layered chaining vs. user-run sequential prompts, removed unsourced 200-word limit for o-series, de-dated Gemini/Ollama/Codex/Grok routes. Added `evals/` regression suite.
 - **1.8.0** — Current-model refresh. Added Claude Fable 5, Opus 5, Sonnet 5, GPT-5.6 Sol/Terra/Luna, Codex, and Grok 4.6 routing. Replaced hidden chain-of-thought requests with auditable reasoning and generalized the Claude task brief for current adaptive-thinking models.
 - **1.7.0** — Opus 4.8 compatibility. Made Claude 4.x routing version-aware: durable advice generalized across 4.6/4.7/4.8, added Opus 4.8 (current default) profile, kept Opus 4.7 labeled. De-hardcoded the effort-level note (now harness-managed). Template M and pattern 36 cover 4.7 and 4.8. Fixed a stray fragment in patterns.md.
 - **1.6.0** — Opus 4.7 update. Added Template M (Opus 4.7 Task Brief). Updated Claude and Claude Code routing for literalism, adaptive thinking, xhigh effort, and session hygiene. Added patterns 36–37.
