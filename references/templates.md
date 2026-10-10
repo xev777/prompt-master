@@ -269,9 +269,10 @@ Style Reference: [artist / film / aesthetic reference if applicable]
 ```
 
 **Tool-specific syntax:**
-- **Midjourney**: Comma-separated descriptors, not prose. Add `--ar`, `--style`, `--v 6` at the end.
-- **Stable Diffusion**: Use `(word:1.3)` weight syntax. CFG scale 7 to 12. Negative prompt is mandatory.
-- **DALL-E 3**: Prose works well. Add "do not include any text in the image" unless text is needed.
+- **Midjourney**: Comma-separated descriptors, not prose. Add `--ar`, `--style`, and the current `--v` (see models.md) at the end. Exclusions only via `--no`.
+- **SD 1.5 / SDXL**: Use `(word:1.3)` weight syntax. CFG ~7-12 (1.5) or ~5-9 (SDXL). Negative prompt strongly recommended.
+- **SD 3.x / Flux**: Natural-language prose, weights largely ignored. SD3 CFG ~4-5; Flux guidance ~3-4 and no negative prompt in default pipelines — drop the Negative Prompts field.
+- **DALL-E 3 / GPT image models**: Prose works well. Add "do not include any text in the image" unless text is needed.
 - **Sora / video**: Add camera movement (slow dolly, static shot, crane up), duration in seconds, and cut style.
 
 ---
@@ -285,7 +286,7 @@ Style Reference: [artist / film / aesthetic reference if applicable]
 
 **Detect the tool's editing capability:**
 - Midjourney: use `--cref [image URL]` for character reference or `--sref` for style reference
-- DALL-E 3: use the Edit endpoint, not the Generate endpoint. User must be in ChatGPT with image editing enabled
+- DALL-E 3 / GPT image models: use the image edit capability (API edit endpoint, or editing in ChatGPT), not plain generation. Check current endpoint names in the provider docs
 - Stable Diffusion: use img2img mode, not txt2img. Set denoising strength 0.3-0.6 to preserve the original
 
 ```
@@ -319,7 +320,7 @@ Negative prompt: no new elements, no style changes, no background changes
 **Model-specific notes:**
 - SD 1.5: shorter prompts work better, under 75 tokens per block, use (word:weight) syntax
 - SDXL: handles longer prompts, supports more natural language alongside weighted syntax
-- Flux: natural language works well, less reliance on weighted syntax, very responsive to style descriptions
+- Flux: natural language works well, weighted syntax largely ignored, very responsive to style descriptions. Default Flux pipelines ignore the negative prompt and use guidance ~3-4 instead of CFG 7 — output an empty or omitted NEGATIVE block and say so
 
 ```
 POSITIVE PROMPT:
@@ -330,7 +331,7 @@ NEGATIVE PROMPT:
 
 CHECKPOINT: [model name]
 SAMPLER: Euler a (recommended starting point)
-CFG SCALE: 7 (increase for stricter prompt adherence)
+CFG SCALE: 7 for SD 1.5/SDXL (increase for stricter adherence); ~4-5 for SD3; Flux: guidance ~3.5, CFG 1
 STEPS: 20-30
 RESOLUTION: [width x height — must be divisible by 64]
 ```
