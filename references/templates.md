@@ -271,7 +271,7 @@ Style Reference: [artist / film / aesthetic reference if applicable]
 **Tool-specific syntax:**
 - **Midjourney**: Comma-separated descriptors, not prose. Add `--ar`, `--style`, and the current `--v` (see models.md) at the end. Exclusions only via `--no`.
 - **SD 1.5 / SDXL**: Use `(word:1.3)` weight syntax. CFG ~7-12 (1.5) or ~5-9 (SDXL). Negative prompt strongly recommended.
-- **SD 3.x / Flux**: Natural-language prose, weights largely ignored. SD3 CFG ~4-5; Flux guidance ~3-4 and no negative prompt in default pipelines — drop the Negative Prompts field.
+- **SD 3.x / Flux**: Natural-language prose, weights largely ignored. SD3 CFG ~4-5. FLUX.2 has no negative prompt — drop the Negative Prompts field and phrase exclusions positively.
 - **DALL-E 3 / GPT image models**: Prose works well. Add "do not include any text in the image" unless text is needed.
 - **Sora / video**: Add camera movement (slow dolly, static shot, crane up), duration in seconds, and cut style.
 
@@ -320,7 +320,7 @@ Negative prompt: no new elements, no style changes, no background changes
 **Model-specific notes:**
 - SD 1.5: shorter prompts work better, under 75 tokens per block, use (word:weight) syntax
 - SDXL: handles longer prompts, supports more natural language alongside weighted syntax
-- Flux: natural language works well, weighted syntax largely ignored, very responsive to style descriptions. Default Flux pipelines ignore the negative prompt and use guidance ~3-4 instead of CFG 7 — output an empty or omitted NEGATIVE block and say so
+- Flux: natural language works well, weighted syntax largely ignored, very responsive to style descriptions. FLUX.2 does not support negative prompts — omit the NEGATIVE block, phrase exclusions positively in the POSITIVE block, and say so
 
 ```
 POSITIVE PROMPT:
@@ -331,7 +331,7 @@ NEGATIVE PROMPT:
 
 CHECKPOINT: [model name]
 SAMPLER: Euler a (recommended starting point)
-CFG SCALE: 7 for SD 1.5/SDXL (increase for stricter adherence); ~4-5 for SD3; Flux: guidance ~3.5, CFG 1
+CFG SCALE: 7 for SD 1.5/SDXL (increase for stricter adherence); ~4-5 for SD3; Flux: use the workflow's guidance node (see models.md), not CFG 7
 STEPS: 20-30
 RESOLUTION: [width x height — must be divisible by 64]
 ```
