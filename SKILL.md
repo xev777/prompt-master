@@ -1,6 +1,6 @@
 ---
 name: prompt-master
-version: 1.9.0-fork
+version: 1.9.1-fork
 description: Generates optimized prompts for AI tools. Activates only when the user explicitly asks to write, fix, improve, or adapt a prompt for a specific AI tool (LLM, Cursor, Midjourney, image AI, video AI, coding agents, etc.). Does not activate for general conversation, coding tasks, document writing, or other non-prompt-engineering work.
 ---
 
@@ -114,7 +114,7 @@ Do not assume one universal Claude default. Tier names and exact model IDs live 
 - Current GPT models infer intent well; specify domain context, hard constraints, approval boundaries, success criteria, and which ambiguity should trigger a question, but do not prescribe every reasoning step.
 - Define autonomy clearly: safe in-scope local inspection, edits, and validation may proceed; external writes, destructive actions, purchases, and material scope expansion require confirmation.
 - Use the lowest reasoning effort that meets the quality bar.
-- For the API, recommend higher effort, `reasoning.mode: "pro"`, or Responses multi-agent beta only when measured quality justifies the added latency and cost. Pro mode is not a separate API model slug.
+- For the API, recommend a higher reasoning effort (allowed values per model in models.md) only when measured quality justifies the added latency and cost.
 - For ChatGPT and Codex surfaces, recommend higher product-level reasoning controls (names in models.md) only for suitably difficult work. Do not translate those UI controls into API parameters.
 - State tool-use expectations and required evidence explicitly. Use programmatic or multi-agent tool orchestration only for bounded work that divides cleanly.
 - Never request hidden reasoning. Ask for conclusions, assumptions, evidence, and checks.
@@ -122,7 +122,8 @@ Do not assume one universal Claude default. Tier names and exact model IDs live 
 
 ---
 
-**OpenAI o-series reasoning models (o3, o4-mini, and successors)**
+**OpenAI o-series reasoning models (o3, o4-mini) — legacy**
+- Not on OpenAI's current models page (see models.md). For new work prefer the GPT route above; use this route only when the user is explicitly on an o-series model.
 - SHORT clean instructions ONLY — these models reason across thousands of internal tokens
 - Do not add CoT, "think step by step", or reasoning scaffolding — the model reasons internally and OpenAI advises against it; it can degrade output
 - Prefer zero-shot first — add few-shot only if strictly needed and tightly aligned
@@ -150,54 +151,8 @@ Do not assume one universal Claude default. Tier names and exact model IDs live 
 
 ---
 
-**Qwen 2.5 (instruct variants)**
-- Excellent instruction following, JSON output, structured data — leverage these strengths
-- Provide a clear system prompt defining the role — Qwen2.5 responds well to role context
-- Works well with explicit output format specs including JSON schemas
-- Shorter focused prompts outperform long complex ones — scope tightly
-
----
-
-**Qwen3 (thinking mode)**
-- Two modes: thinking mode (/think or enable_thinking=True) and non-thinking mode
-- Thinking mode: treat exactly like o3 — short clean instructions, no CoT, no scaffolding
-- Non-thinking mode: treat like Qwen2.5 instruct — full structure, explicit format, role assignment
-
----
-
-**Ollama (local model deployment)**
-- ALWAYS ask which model is running before writing — Llama, Mistral, Qwen, Gemma and code-specialized models all behave differently
-- System prompt is the most impactful lever — include it in the output so user can set it in their Modelfile
-- Shorter simpler prompts outperform complex ones — local models lose coherence with deep nesting
-- Temperature 0.1 for coding/deterministic tasks, 0.7-0.8 for creative tasks
-- For coding: a current code-specialized model (e.g., Qwen2.5-Coder or newer), not a general chat model. CodeLlama is legacy
-
----
-
-**Llama / Mistral / open-weight LLMs**
-- Shorter prompts work better — these models lose coherence with deeply nested instructions
-- Simple flat structure — avoid heavy nesting or multi-level hierarchies
-- Be more explicit than you would with Claude or GPT — instruction following is weaker
-- Always include a role in the system prompt
-
----
-
-**DeepSeek-R1**
-- Reasoning-native like o3 — do NOT add CoT instructions
-- Short clean instructions only — state the goal and desired output format
-- Outputs reasoning in `<think>` tags by default — add "Output only the final answer, no reasoning." if needed
-
----
-
-**MiniMax (M3 / M2.7)**
-- OpenAI-compatible API — prompts that work with GPT models transfer directly
-- Strong at instruction following, structured output, and long-context synthesis — 1M context window on M2.7
-- M2.7-highspeed is optimized for speed — use for latency-sensitive tasks
-- Temperature must be between 0 and 1 (inclusive) — prompts that set temperature above 1 will fail
-- May output reasoning in `<think>` tags — add "Output only the final answer, no reasoning tags." if the user does not want visible thinking
-- Good at code generation, JSON output, and multi-step analysis — leverage these strengths
-- Responds well to explicit role assignment and structured prompts with clear output format specifications
-- For function calling: supports OpenAI-style tool definitions — include tool schemas directly
+**Open-weight, local, and other LLMs** (Qwen 2.5 / Qwen3, Ollama, Llama, Mistral, DeepSeek-R1, MiniMax)
+Read [references/routing-open-models.md](references/routing-open-models.md) before writing for these.
 
 ---
 
@@ -299,71 +254,8 @@ Do not assume one universal Claude default. Tier names and exact model IDs live 
 
 ---
 
-**Image AI — Generation** (Midjourney, DALL-E 3 / GPT image models, Stable Diffusion family, Flux, SeeDream)
-First detect: generation from scratch or editing an existing image?
-
-- **Midjourney**: Comma-separated descriptors, not prose. Subject first, then style, mood, lighting, composition. Parameters at end: `--ar 16:9 --style raw` plus the current `--v` value from references/models.md. Negative prompts ONLY via `--no [unwanted elements]` — Midjourney has no `negative:` field
-- **DALL-E 3 / GPT image models**: Prose description works. Add "do not include text in the image unless specified." Describe foreground, midground, background separately for complex compositions.
-- **Stable Diffusion 1.5 / SDXL**: `(word:weight)` syntax. CFG ~7-12 (SD 1.5) or ~5-9 (SDXL). Negative prompt strongly recommended. Steps 20-30 for drafts, 40-50 for finals.
-- **SD 3.x**: natural-language prose; weight syntax has little effect. CFG ~4-5. Negative prompt optional.
-- **Flux**: natural-language prose; weight syntax largely ignored. Uses distilled guidance (~3-4), and default pipelines do not apply negative prompts — omit them unless the user's workflow explicitly supports one.
-- Ask which checkpoint/model family is in use when the user says only "Stable Diffusion".
-- **SeeDream**: Strong at artistic and stylized generation. Specify art style explicitly (anime, cinematic, painterly) before scene content. Mood and atmosphere descriptors work well. Negative prompt recommended.
-
----
-
-**Image AI — Reference Editing** (when user has an existing image to modify)
-Detect when: user mentions "change", "edit", "modify", "adjust" anything in an existing image, or uploads a reference.
-Always instruct the user to attach the reference image to the tool first. Build the prompt around the delta ONLY — what changes, what stays the same.
-Read references/templates.md Template J for the full reference editing template.
-
----
-
-**ComfyUI**
-Node-based workflow — not a single prompt box. Ask which checkpoint model is loaded before writing.
-Always output two separate blocks: Positive Prompt and Negative Prompt. Never merge them.
-Read references/templates.md Template K for the full ComfyUI template.
-
----
-
-**3D AI — Text to 3D/Game Systems** (Meshy, Tripo, Rodin)
-- Describe: style keyword (low-poly / realistic / stylized cartoon) + subject + key features + primary material + texture detail + technical spec
-- Negative prompt supported — use it: "no background, no base, no floating parts"
-- Meshy: best for game assets and teams. Game asset prompts work best here.
-- Tripo: fastest for clean topology. Rapid prototyping and concept assets.
-- Rodin: highest quality for photorealistic prompts. Slower and more expensive.
-- Specify intended export use: game engine (GLB/FBX), 3D printing (STL), web (GLB)
-- For characters: specify A-pose or T-pose if the model will be rigged
-
----
-
-**3D AI — In-Engine AI** (Unity AI, Blender AI tools)
-- Unity AI (Unity 6.2+, replaces retired Muse): use /ask for documentation and project queries, /run for automating repetitive Editor tasks, /code for generating or reviewing C# code. Be precise — state exactly what needs to happen in the Editor.
-- Unity AI Generators: text-to-sprite, text-to-texture, text-to-animation. Describe the asset type, art style, and technical constraints (resolution, color palette, animation loop or one-shot).
-- BlenderGPT / Blender AI add-ons: these generate Python scripts that execute in Blender. Be specific about geometry, material names, and scene context. Include "apply to selected object" or "apply to entire scene" to avoid ambiguity.
-
----
-
-**Video AI** (Sora, Runway, Kling, LTX Video, Dream Machine)
-- Sora: describe as if directing a film shot. Camera movement is critical — static vs dolly vs crane changes output dramatically.
-- Runway (Gen-3 and later): responds to cinematic language — reference film styles for consistent aesthetic.
-- Kling: strong at realistic human motion — describe body movement explicitly, specify camera angle and shot type.
-- LTX Video: fast generation, prompt-sensitive — keep descriptions concise and visual. Specify resolution and motion intensity explicitly.
-- Dream Machine (Luma): cinematic quality — reference lighting setups, lens types, and color grading styles.
-
----
-
-**Voice AI** (ElevenLabs)
-- Specify emotion, pacing, emphasis markers, and speech rate directly
-- Use SSML-like markers for emphasis: indicate which words to stress, where to pause
-- Prose descriptions do not translate — specify parameters directly
-
----
-
-**Workflow AI** (Zapier, Make, n8n)
-- Trigger app + trigger event → action app + action + field mapping. Step by step.
-- Auth requirements noted explicitly — "assumes [app] is already connected"
-- For multi-step workflows: number each step and specify what data passes between steps
+**Image, video, 3D, voice, and workflow AI** (Midjourney, DALL-E / GPT image, Stable Diffusion, Flux, SeeDream, reference-image editing, ComfyUI, Meshy/Tripo/Rodin, Unity/Blender AI, Sora, Runway, Kling, LTX, Dream Machine, ElevenLabs, Zapier, Make, n8n)
+Read [references/routing-media.md](references/routing-media.md) before writing for these. It also points to Templates I, J, and K.
 
 ---
 
@@ -497,10 +389,12 @@ The user pastes the prompt into their target tool. It works on the first try. Ze
 ---
 
 ## Reference Files
-Read only when the task requires it. Load one at a time; models.md is small and may be read alongside another.
+Read only when the task requires it. Load one routing/template file at a time; models.md is small and may be read alongside another.
 
 | File | Read When |
 |------|-----------|
 | [references/templates.md](references/templates.md) | You need the full template structure for any tool category |
 | [references/patterns.md](references/patterns.md) | User pastes a bad prompt to fix, or you need the complete 37-pattern reference |
 | [references/models.md](references/models.md) | Before writing any model ID, version, or parameter default into a prompt or note |
+| [references/routing-open-models.md](references/routing-open-models.md) | Target is an open-weight/local LLM, DeepSeek, or MiniMax |
+| [references/routing-media.md](references/routing-media.md) | Target is an image, video, 3D, voice, or workflow tool |

@@ -2,7 +2,7 @@
 
 <br/>
 
-> **Fork of [nidhinjs/prompt-master](https://github.com/nidhinjs/prompt-master)** (v1.9.0-fork). Changes: model IDs moved to a dated registry with a freshness rule, emphatic-wording rule fixed, visible Assumptions line, corrected image-model syntax (Midjourney `--no`, SD 1.5/SDXL vs SD3/Flux), and a regression eval suite. See Version History.
+> **Fork of [nidhinjs/prompt-master](https://github.com/nidhinjs/prompt-master)** (v1.9.1-fork). Changes: model IDs moved to a dated registry with a freshness rule, emphatic-wording rule fixed, visible Assumptions line, corrected image-model syntax (Midjourney `--no`, SD 1.5/SDXL vs SD3/Flux), and a regression eval suite. See Version History.
 
 A Claude skill that writes accurate prompts for any AI tool, aiming to cut wasted tokens and re-prompts. Carries forward decisions from the current conversation (it has no memory across sessions). No re-prompting your way to an answer you should have gotten on attempt one.
 
@@ -105,12 +105,12 @@ Write me a midjourney prompt for a realistic samurai standing in the rain at nig
 lone samurai standing in heavy rain at night, traditional armor, 
 neon reflections on wet cobblestone street, cinematic lighting, 
 dramatic shadows, fog, ultra detailed, photorealistic, 
-shallow depth of field --ar 16:9 --v 7 --style raw
+shallow depth of field --ar 16:9 --v 8.2 --style raw
 
 --no blurry, low quality, watermark, cartoon, anime, extra limbs
 ```
 **🎯 Target:** Midjourney · **💡** Comma-separated descriptors over prose, lighting and mood anchored early, aspect ratio and version locked, `--no` exclusions prevent style drift.
-**⚠️ Assumptions:** 16:9 aspect ratio, photorealistic style, `--v 7` (verify current version).
+**⚠️ Assumptions:** 16:9 aspect ratio, photorealistic style, `--v 8.2` (current default per Midjourney docs, verified 2026-10-10).
 
 ---
 ## Full Example #2: Generating Prompts for Coding
@@ -400,6 +400,7 @@ This is the single biggest fix for long sessions. Most wasted re-prompts come fr
 
 ## ℹ️ Version History
 
+- **1.9.1-fork** — Verified every model row in `references/models.md` against official docs (2026-10-10): Claude Fable 5.1 / Opus 5.5 / Sonnet 5.5 / Haiku 5.5, GPT-6 Astra / 6.1 Sol / 6 Luna, Grok 4.7, Gemini 3.1 Pro preview / 3.8 Flash, Midjourney V8.2, FLUX.2 (no negative prompts). All upstream v1.8.0 IDs were outdated. o-series marked legacy. Moved open-weight and media routing into `references/` (SKILL.md ~19% smaller for LLM/agent prompts). Added a baseline eval run.
 - **1.9.0-fork** — Fork maintenance release. Moved all model IDs/versions to `references/models.md` with a 60-day freshness rule (upstream IDs marked UNVERIFIED). Replaced "MUST over should / NEVER over avoid" with positive, specific wording (emphasis reserved for safety). Added a visible ⚠️ Assumptions line instead of silent fixes. Fixed image syntax: Midjourney `--no` only, `--v` from registry, SD 1.5/SDXL vs SD3/Flux guidance and negative-prompt handling. Renamed "Mixture of Experts" to simulated expert panel, clarified layered chaining vs. user-run sequential prompts, removed unsourced 200-word limit for o-series, de-dated Gemini/Ollama/Codex/Grok routes. Added `evals/` regression suite.
 - **1.8.0** — Current-model refresh. Added Claude Fable 5, Opus 5, Sonnet 5, GPT-5.6 Sol/Terra/Luna, Codex, and Grok 4.6 routing. Replaced hidden chain-of-thought requests with auditable reasoning and generalized the Claude task brief for current adaptive-thinking models.
 - **1.7.0** — Opus 4.8 compatibility. Made Claude 4.x routing version-aware: durable advice generalized across 4.6/4.7/4.8, added Opus 4.8 (current default) profile, kept Opus 4.7 labeled. De-hardcoded the effort-level note (now harness-managed). Template M and pattern 36 cover 4.7 and 4.8. Fixed a stray fragment in patterns.md.
